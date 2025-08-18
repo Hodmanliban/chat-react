@@ -1,12 +1,13 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://chatify-api.up.railway.app/",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
 
 let csrfToken = null;
 api.interceptors.request.use(async (config) => {
