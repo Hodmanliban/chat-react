@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { register as registerApi } from "../utils/Auth"
+import { registerUser } from "../services/api"; // <-- use api.js directly
 
 function Register() {
     const [username, setUsername] = useState("");
@@ -8,7 +8,6 @@ function Register() {
     const [email, setEmail] = useState("");
     const [avatar, setAvatar] = useState("https://i.pravatar.cc/150?img=1");
     const [error, setError] = useState(null);
-
     const [success, setSuccess] = useState(null);
 
     const navigate = useNavigate();
@@ -19,25 +18,23 @@ function Register() {
         "https://i.pravatar.cc/150?img=4",
         "https://i.pravatar.cc/150?img=5",
     ];
+
     async function handleSubmit(e) {
         e.preventDefault();
         setError(null);
         setSuccess(null);
 
-        console.log("handleSubmit startar");
-        console.log({ username, email, password, avatar });
-
         try {
-            await registerApi({ username, password, email, avatar });
+            await registerUser(username, password, email, avatar);
             setSuccess("Registrering lyckades!");
             setTimeout(() => {
                 navigate("/login");
             }, 2000);
         } catch (err) {
-            console.log("registerApi failed", err);
-            setError(err.message || "Något gick fel vid registrering.")
+            setError(err.message || "Något gick fel vid registrering.");
         }
     }
+
     return (
         <div>
             <h2>Registrera dig</h2>
@@ -56,7 +53,6 @@ function Register() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                 />
-
                 <input
                     type="password"
                     placeholder="Lösenord"
@@ -64,10 +60,9 @@ function Register() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
-
                 <div>
                     <p>Välj en avatar:</p>
-                    <div style={{ display: "flex", gap: "10px", flexwrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                         {avatarOptions.map((url, index) => (
                             <img
                                 key={index}
@@ -77,7 +72,7 @@ function Register() {
                                 style={{
                                     width: "60px",
                                     height: "60px",
-                                    border: avatar == url ? "3px solid blue" : "1px solid gray",
+                                    border: avatar === url ? "3px solid blue" : "1px solid gray",
                                     borderRadius: "50%",
                                     cursor: "pointer",
                                 }}
@@ -86,12 +81,10 @@ function Register() {
                     </div>
                 </div>
                 <button type="submit">Registrera</button>
-
                 {error && <p style={{ color: "red" }}>{error}</p>}
                 {success && <p style={{ color: "green" }}>{success}</p>}
             </form>
         </div>
-
     );
 }
 
