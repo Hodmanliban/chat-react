@@ -1,0 +1,158 @@
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Messages wrapper */
+.chat-message-wrapper {
+    display: flex;
+    width: 100%;
+}
+
+.chat-message-left {
+    justify-content: flex-start;
+}
+
+.chat-message-right {
+    justify-content: flex-end;
+}
+
+/* Bubbles */
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    max-width: 60%;
+    padding: 10px;
+    border-radius: 16px;
+    position: relative;
+    color: #fff;
+}
+
+/* Vanliga vänster-meddelanden */
+.chat-message-left .chat-message {
+    background: #1a1a1a;
+    border-radius: 16px 16px 16px 0;
+    text-align: left;
+}
+
+/* Egna höger-meddelanden */
+.chat-message-right .chat-message {
+    background: #23272f;
+    border-radius: 16px 16px 0 16px;
+    text-align: right;
+}
+
+/* Fakechat - ljusare grå */
+.chat-message-left .chat-message-fake {
+    background: #3a3a3a;
+    border-radius: 16px 16px 16px 0;
+    text-align: left;
+    opacity: 0.9;
+}
+
+/* Header */
+.chat-message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.chat-message-user {
+    font-size: 0.9em;
+    font-weight: bold;
+    opacity: 0.7;
+}
+
+.chat-message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+}
+
+/* Text */
+.chat-message-text {
+    word-break: break-word;
+}
+
+/* Delete button */
+.chat-delete-btn {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.chat-message:hover .chat-delete-btn {
+    opacity: 1;
+}
+
+
+/* Chat form */
+.chat-form {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.chat-form input {
+    flex: 1;
+    font-size: 1.2em;
+    padding: 0.8em 1em;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.chat-form button {
+    font-size: 1em;
+    padding: 0.5em 1em;
+}
+
+/* Messages scroll */
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Responsive Layout */
+@media (max-width: 900px) {
+    .chat-layout {
+        flex-direction: column;
+    }
+
+    .chat-main {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .chat-main {
+        padding: 0.5rem;
+    }
+
+    .chat-message-avatar {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+@media (max-width: 400px) {
+    .chat-message {
+        max-width: 90%;
+    }
+
+    .chat-form input {
+        font-size: 1em;
+        padding: 0.6em;
+    }
+
+    .chat-form button {
+        padding: 0.4em 0.8em;
+    }
+}

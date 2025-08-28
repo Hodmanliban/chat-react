@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import  { jwtDecode }from "jwt-decode";
-import { login as loginApi } from "../utils/Auth";
+import { jwtDecode } from "jwt-decode";
+import { loginUser, logoutUser, getUser } from "../services/api";
 
 const AuthContext = createContext();
 
@@ -10,40 +10,51 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (token) {
-            try {
-                const decoded = jwtDecode(token);
-                setUser({
-                    id: decoded.id,
-                    username: decoded.username,
-                    avatar: decoded.avatar,
-                    token,
-                });
-            } catch {
-                localStorage.removeItem("token");
+        async function fetchUserFromToken(token) {
+            if (token) {
+                try {
+                    const decoded = jwtDecode(token);
+                    const fullUser = await getUser(decoded.id);
+                    setUser({
+                        id: fullUser.id,
+                        username: fullUser.username,
+                        email: fullUser.email,
+                        avatar: fullUser.avatar,
+                        token,
+                    });
+                } catch {
+                    localStorage.removeItem("token");
+                }
             }
+            setLoading(false);
         }
-        setLoading(false);
+        fetchUserFromToken(token);
     }, []);
 
     async function login({ username, password }) {
         try {
-            const data = await loginApi({ username, password });
-            const decoded = jwtDecode(data.token);
-            localStorage.setItem("token", data.token);
-            setUser({
-                id: decoded.id,
-                username: decoded.username,
-                avatar: decoded.avatar,
-                token: data.token,
-            });
-            return true;
+            const data = await loginUser(username, password);
+            if (data?.token) {
+                localStorage.setItem("token", data.token);
+                const decoded = jwtDecode(data.token);
+                const fullUser = await getUser(decoded.id);
+                setUser({
+                    id: fullUser.id,
+                    username: fullUser.username,
+                    email: fullUser.email,
+                    avatar: fullUser.avatar,
+                    token: data.token,
+                });
+                return true;
+            }
+            return false;
         } catch (error) {
             throw error;
         }
     }
 
     function logout() {
+        logoutUser();
         localStorage.removeItem("token");
         setUser(null);
     }
@@ -53,7 +64,7 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, setUser }}>
             {children}
         </AuthContext.Provider>
     );
