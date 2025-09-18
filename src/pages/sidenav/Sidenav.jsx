@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { deleteUser } from "../../services/api";
-import "./SideNav.css";
+import "./Sidenav.css";
 
 function SideNav() {
   const { user, logout } = useAuth();
