@@ -25,14 +25,8 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  justify-content: center;
-  /* Horisontell centrering */
-  align-items: center;
-  /* Vertikal centrering */
   min-width: 320px;
   min-height: 100vh;
-
   background-color: #242424;
   color: rgba(255, 255, 255, 0.87);
 }

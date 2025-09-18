@@ -3,73 +3,99 @@ import { jwtDecode } from "jwt-decode";
 import { loginUser, logoutUser, getUser } from "../services/api";
 
 const AuthContext = createContext();
+export function useAuth() { return useContext(AuthContext); }
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        async function fetchUserFromToken(token) {
-            if (token) {
-                try {
-                    const decoded = jwtDecode(token);
-                    const fullUser = await getUser(decoded.id);
-                    setUser({
-                        id: fullUser.id,
-                        username: fullUser.username,
-                        email: fullUser.email,
-                        avatar: fullUser.avatar,
-                        token,
-                    });
-                } catch {
-                    localStorage.removeItem("token");
-                }
-            }
-            setLoading(false);
-        }
-        fetchUserFromToken(token);
-    }, []);
+  const cachedToken = sessionStorage.getItem("token");
+  const cachedUsername = sessionStorage.getItem("username") || "";
+  const cachedAvatar = sessionStorage.getItem("avatar") || "";
+  let cachedId = "";
+  if (cachedToken) {
+    try {
+      const d = jwtDecode(cachedToken);
+      cachedId = d.id || d.userId || d.sub || "";
+    } catch { }
+  }
 
-    async function login({ username, password }) {
+ 
+  const [user, setUser] = useState(
+    cachedToken && cachedId
+      ? { id: cachedId, username: cachedUsername, avatar: cachedAvatar, token: cachedToken }
+      : null
+  );
+  const [loading, setLoading] = useState(!!(cachedToken && cachedId && !cachedUsername));
+
+  useEffect(() => {
+    
+    if (user && (!user.username || !user.avatar)) {
+      (async () => {
         try {
-            const data = await loginUser(username, password);
-            if (data?.token) {
-                localStorage.setItem("token", data.token);
-                const decoded = jwtDecode(data.token);
-                const fullUser = await getUser(decoded.id);
-                setUser({
-                    id: fullUser.id,
-                    username: fullUser.username,
-                    email: fullUser.email,
-                    avatar: fullUser.avatar,
-                    token: data.token,
-                });
-                return true;
-            }
-            return false;
-        } catch (error) {
-            throw error;
+          const full = await getUser(user.id);
+          const safe = {
+            ...user,
+            username: full?.username || user.username,
+            avatar: full?.avatar || user.avatar,
+            email: full?.email || "",
+          };
+          setUser(safe);
+          sessionStorage.setItem("username", safe.username || "");
+          sessionStorage.setItem("avatar", safe.avatar || "");
+        } catch {
+          setUser(null);
         }
+        setLoading(false);
+      })();
+    } else {
+      setLoading(false);
     }
+   
+  }, []);
 
-    function logout() {
-        logoutUser();
-        localStorage.removeItem("token");
-        setUser(null);
+
+ 
+  async function login({ username, password }) {
+    try {
+    
+      const { token } = await loginUser(username, password);
+      const decoded = jwtDecode(token);
+      const id = decoded.id || decoded.userId || decoded.sub || "";
+   
+      const full = await getUser(id);
+      const userObj = {
+        id,
+        username: full?.username || username,
+        avatar: full?.avatar || "",
+        token,
+        email: full?.email || "",
+      };
+     
+      setUser(userObj);
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("username", userObj.username || "");
+      sessionStorage.setItem("avatar", userObj.avatar || "");
+      return userObj;
+    } catch (err) {
+      throw err;
     }
+  }
 
-    if (loading) {
-        return <p>Laddar användardata...</p>;
-    }
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, loading, setUser }}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
+  function logout() {
+   
+    setUser(null);
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("avatar");
+    logoutUser(); 
+  }
 
-export function useAuth() {
-    return useContext(AuthContext);
+  
+
+  if (loading) return <p>Laddar användardata...</p>;
+  return (
+    <AuthContext.Provider value={{ user, setUser, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

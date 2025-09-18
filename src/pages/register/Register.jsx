@@ -30,7 +30,7 @@ function Register() {
             setSuccess("Registrering lyckades!");
             setTimeout(() => {
                 navigate("/login");
-            }, 2000);
+            }, 1000);
         } catch (err) {
             setError(
                 err?.response?.data?.message ||
@@ -63,7 +63,7 @@ function Register() {
                         required
                     />
                 </div>
-                {/* Lösenord och knapp på nästa rad */}
+               
                 <div className="register-input-row">
                     <input
                         className="form-input"

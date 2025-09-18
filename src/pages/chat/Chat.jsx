@@ -1,164 +1,120 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { useAuth } from "../../context/AuthContext";
+import SideNav from "../sidenav/Sidenav";
 import { getAllMessages, postMessage, deleteMessage } from "../../services/api";
+import { useNavigate } from "react-router-dom";
 import "./Chat.css";
 
-function sanitize(text) {
-    return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 const fakeChat = [
-    { id: "fake1", text: "Tja tja, hur mår du?", avatar: "https://i.pravatar.cc/100?img=14", username: "Johnny", userId: "fake", conversationId: null },
-    { id: "fake2", text: "Hallå!! Svara då!!", avatar: "https://i.pravatar.cc/100?img=14", username: "Johnny", userId: "fake", conversationId: null },
-    { id: "fake3", text: "Sover du eller?! 😴", avatar: "https://i.pravatar.cc/100?img=14", username: "Johnny", userId: "fake", conversationId: null }
+  { id: "fake1", text: "Tja tja, hur mår du?", avatar: "https://i.pravatar.cc/100?img=14", username: "Johnny" },
+  { id: "fake2", text: "Hallå!! Svara då!!", avatar: "https://i.pravatar.cc/100?img=14", username: "Johnny" },
+  { id: "fake3", text: "Sover du eller?! 😴", avatar: "https://i.pravatar.cc/100?img=14", username: "Johnny" },
 ];
 
-// Hjälpfunktion för att mappa egna meddelanden
-function normalizeMessages(data, user) {
-    return data.map(msg => {
-        // Egna meddelanden ska vara höger
-        if (msg.username === user?.username) {
-            return { ...msg, userId: user.id };
-        }
-        // Alla andra (utom fakeChat) → vänster
-        return msg;
-    });
-}
+export default function Chat() {
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
+  const [msgs, setMsgs] = useState([]);
+  const [text, setText] = useState("");
+  const [err, setErr] = useState("");
+  const endRef = useRef(null);
 
-function Chat() {
-    const { user } = useAuth();
-    const [messages, setMessages] = useState([]);
-    const [text, setText] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(true);
-    const messagesEndRef = useRef(null);
-    const [contextMenuId, setContextMenuId] = useState(null);
-
-    function handleContextMenu(e, id) {
-        e.preventDefault();
-        setContextMenuId(id);
-    }
-
-    useEffect(() => {
-        async function fetchMessages() {
-            setLoading(true);
-            try {
-                const data = await getAllMessages();
-                const fixed = normalizeMessages(data, user);
-                // FakeChat alltid först
-                setMessages([...fakeChat, ...fixed]);
-            } catch {
-                setError("Kunde inte hämta meddelanden.");
-            }
-            setLoading(false);
-        }
-        fetchMessages();
-    }, [user]);
-
-    useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [messages]);
-
-    async function handleSend(e) {
-        e.preventDefault();
-        setError("");
-        if (!text.trim()) return;
-        try {
-            await postMessage(text, null, user.avatar);
-            setText("");
-            const data = await getAllMessages();
-            const fixed = normalizeMessages(data, user);
-            // FakeChat alltid först
-            setMessages([...fakeChat, ...fixed]);
-        } catch {
-            setError("Kunde inte skicka meddelande.");
-        }
-    }
-
-    async function handleDelete(id) {
-        setError("");
-        if (id.startsWith("fake")) {
-            // Fakechat ska inte kunna raderas
-            setContextMenuId(null);
-            return;
-        }
-        try {
-            await deleteMessage(id);
-            setMessages(messages.filter(msg => msg.id !== id));
-            setContextMenuId(null);
-        } catch {
-            setError("Kunde inte radera meddelande.");
-        }
-    }
-
-    if (loading) return <p>Laddar meddelanden...</p>;
-
-    return (
-        <div className="chat-container">
-            <div className="chat-messages">
-                {messages.map(msg => {
-                    const isRight = msg.userId === user?.id;
-                    const showDelete = msg.userId === user?.id && !msg.id.startsWith("fake");
-
-                    return (
-                        <div
-                            key={msg.id}
-                            className={`chat-message-wrapper ${isRight ? "chat-message-right" : "chat-message-left"}`}
-                            onContextMenu={e => handleContextMenu(e, msg.id)}
-                        >
-                            <div className="chat-message">
-                                <div className="chat-message-header">
-                                    <img
-                                        src={msg.avatar || "https://i.pravatar.cc/150?img=1"}
-                                        alt="Avatar"
-                                        className="chat-message-avatar"
-                                    />
-                                    <span className="chat-message-user">{msg.username}</span>
-                                </div>
-                                <div className="chat-message-text">{sanitize(msg.text || "")}</div>
-                                {showDelete && (
-                                    <button
-                                        className="chat-delete-btn"
-                                        onClick={() => handleDelete(msg.id)}
-                                        title="Radera"
-                                        type="button"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                            stroke="currentColor"
-                                            className="chat-delete-icon"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                                            />
-                                        </svg>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-                <div ref={messagesEndRef} />
-            </div>
-
-            <form className="chat-form" onSubmit={handleSend}>
-                <input
-                    type="text"
-                    value={text}
-                    onChange={e => setText(e.target.value)}
-                    placeholder="Skriv ett meddelande..."
-                />
-                <button type="submit">Skicka</button>
-            </form>
-        </div>
+  const isMine = (m) =>
+    !!user && (
+      m.userId === user.id ||
+      m.authorId === user.id ||
+      m.ownerId === user.id ||
+      m.username === user.username
     );
-}
 
-export default Chat;
+  async function load() {
+    try {
+      const data = await getAllMessages();
+      setMsgs(data || []);
+    } catch (e) {
+      if (e?.message === "EXPIRED_TOKEN") { logout(); nav("/login"); return; }
+      setErr("Kunde inte hämta meddelanden."); setMsgs([]);
+    }
+  }
+
+  useEffect(() => { load(); }, [user?.id, user?.username]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  async function send(e) {
+    e.preventDefault();
+    if (!text.trim() || !user) return;
+    try {
+      await postMessage(text, null, user.avatar, user.username);
+      setText(""); await load();
+    } catch (e) {
+      if (e?.message === "EXPIRED_TOKEN") { logout(); nav("/login"); return; }
+      setErr("Kunde inte skicka meddelande.");
+    }
+  }
+
+  async function remove(id) {
+    try { await deleteMessage(id); setMsgs((p) => p.filter((m) => m.id !== id)); }
+    catch (e) {
+      if (e?.message === "EXPIRED_TOKEN") { logout(); nav("/login"); return; }
+      setErr("Kunde inte radera meddelande.");
+    }
+  }
+
+  const all = [...fakeChat, ...msgs];
+
+  return (
+    <>
+      <SideNav />
+      <div className="chat-container">
+        {err && <p className="error">{err}</p>}
+
+        <div className="chat-messages">
+          {all.map((m, i) => {
+            const mine = isMine(m);
+            const name = mine ? (user?.username || m.username || "Okänd") : (m.username || "Okänd");
+            const avatar = mine
+              ? (user?.avatar || "https://i.pravatar.cc/150?img=1")
+              : (m.avatar || "https://i.pravatar.cc/150?img=1");
+
+            return (
+              <div
+                key={m.id || `fake-${i}`}
+                className={`chat-message-wrapper ${mine ? "chat-message-right" : "chat-message-left"}`}
+              >
+                <div className="chat-message">
+                  <div className="chat-message-header">
+                    <img src={avatar} alt="" className="chat-message-avatar" />
+                    <span className="chat-message-user">{name}</span>
+                  </div>
+
+                  <div className="chat-message-text">
+                    {DOMPurify.sanitize(String(m.text ?? m.message ?? m.content ?? m.body ?? ""))}
+                  </div>
+
+
+                  {mine && m.id && !String(m.id).startsWith("fake") && (
+                    <button className="chat-delete-btn" onClick={() => remove(m.id)} aria-label="Radera">
+                      🗑
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={endRef} />
+        </div>
+
+        <form className="chat-form" onSubmit={send}>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Skriv ett meddelande..."
+            disabled={!user}
+          />
+          <button disabled={!user || !text.trim()}>Skicka</button>
+        </form>
+      </div>
+    </>
+  );
+}

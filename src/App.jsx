@@ -1,8 +1,9 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
 import Chat from "./pages/chat/Chat";
-import Profile from "./pages/profile/Profile";
+
 import Sidenav from "./pages/sidenav/Sidenav";
 import { useAuth } from "./context/AuthContext";
 
@@ -14,13 +15,22 @@ function ProtectedRoute({ children }) {
 
 function App() {
   const { user } = useAuth();
+
   return (
     <>
-      <Sidenav />
+    
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/chat" />} />
-        <Route path="/register" element={!user ? <Register /> : <Navigate to="/chat" />} />
+        <Route path="/" element={<Navigate to={user ? "/chat" : "/login"} />} />
+
+        <Route
+          path="/login"
+          element={!user ? <Login /> : <Navigate to="/chat" />}
+        />
+        <Route
+          path="/register"
+          element={!user ? <Register /> : <Navigate to="/chat" />}
+        />
+
         <Route
           path="/chat"
           element={
@@ -29,14 +39,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
+
+        <Route path="*" element={<div style={{ padding: 16 }}>Sidan finns inte</div>} />
       </Routes>
     </>
   );

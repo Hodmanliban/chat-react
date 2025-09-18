@@ -1,11 +1,19 @@
 .register-container {
     max-width: 500px;
-    margin: 2rem auto;
+    margin: 0 auto;
+    margin-top: 5rem;
+    /* Byt från 5 till 5rem för korrekt spacing */
     padding: 2rem;
     background: #222;
     color: #fff;
     border-radius: 10px;
     box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+
+    /* Lägg till dessa för vertikal centrering */
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .register-input-row {
